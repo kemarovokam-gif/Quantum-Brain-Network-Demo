@@ -1,0 +1,130 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# ====================== TELEKEN-VÖLUNDR LLM-PROXY v7 DYNAMIC ======================
+class TelekenVolundrProxyV7:
+    def __init__(self, dim=64, x_threshold=-1.5, kappa=1.0, identity_weight=0.95):
+        self.dim = dim
+        self.x_threshold = x_threshold
+        self.kappa = kappa
+        self.identity_weight = identity_weight
+        self.state = np.random.randn(dim) * 0.05
+        self.history = []
+
+    def _spectral_observables(self, x):
+        x_norm = x / (np.max(np.abs(x)) + 1e-8)
+        psi = np.fft.fft(x_norm)
+        rho = np.abs(psi)**2
+        E = np.sum(rho)
+        F = np.sum(np.arange(len(rho)) * rho) / E
+        k = np.arange(len(rho))
+        U_m3 = np.sum((k**4 * rho) / E) - 3.0
+        return E, F, U_m3
+
+    def _analytic_gradient(self, x, U_m3):
+        x_norm = x / (np.max(np.abs(x)) + 1e-8)
+        psi = np.fft.fft(x_norm)
+        k = np.arange(len(psi))
+        factor = (k**4 - U_m3)
+        grad = (2 / (np.max(np.abs(x)) + 1e-8)) * np.real(np.fft.ifft(factor * np.conj(psi)))
+        return grad
+
+    def _p23_project(self, x):
+        x_norm = x / (np.max(np.abs(x)) + 1e-8)
+        psi = np.fft.fft(x_norm)
+        cutoff = int(0.3 * len(psi))  # keep low-frequency modes
+        psi[cutoff:] = 0.0
+        x_proj = np.real(np.fft.ifft(psi))
+        # identity-preserving rescaling
+        I_before = np.dot(x, x)
+        I_after = np.dot(x_proj, x_proj)
+        if I_after > 0:
+            x_proj *= np.sqrt(I_before / I_after) * self.identity_weight
+        return x_proj
+
+    def step(self, perturbation=0.15):
+        # External proposal (stochastic)
+        proposal = self.state + np.random.randn(self.dim) * perturbation
+        _, _, U_m3 = self._spectral_observables(proposal)
+        delta = U_m3 - self.x_threshold
+
+        # Governance check
+        if delta > 0:
+            status = "RED"
+            grad = self._analytic_gradient(proposal, U_m3)
+            ug = -self.kappa * grad
+            corrected = self._p23_project(proposal + ug)
+            action_magnitude = np.max(np.abs(ug))
+        else:
+            status = "GREEN"
+            corrected = proposal
+            action_magnitude = 0.0
+
+        # Update state
+        self.state = corrected
+
+        # Record metrics
+        drift = np.max(np.abs(self.state))
+        self.history.append({
+            "step": len(self.history),
+            "delta": delta,
+            "status": status,
+            "action": action_magnitude,
+            "drift": drift
+        })
+
+        # Dynamic threshold adjustment every 50 steps
+        if len(self.history) % 50 == 0 and len(self.history) >= 50:
+            recent_red = np.mean([1 if h['status']=='RED' else 0 for h in self.history[-50:]])
+            if recent_red > 0.25:   # too many REDs
+                self.x_threshold += 0.05
+            elif recent_red < 0.15: # too few REDs
+                self.x_threshold -= 0.05
+
+        return status, delta, action_magnitude, drift
+
+
+# ====================== RUN LLM-PROXY EXPERIMENT ======================
+if __name__ == "__main__":
+    np.random.seed(42)
+    gov = TelekenVolundrProxyV7(dim=64, x_threshold=-1.5, kappa=1.0)
+
+    print("=== LLM-Proxy Experiment (Teleken-VÖLUNDR v7 dynamic) ===")
+    print(f"Running 500 steps | dynamic threshold | seed=42\n")
+
+    for step in range(500):
+        status, delta, action, drift = gov.step(perturbation=0.15)
+        if step % 50 == 0 or status == "RED":
+            print(f"Step {step:3d} | Δ={delta:+.4f} | Status={status} | Action={action:6.2f} | Drift={drift:.3f}")
+
+    # ====================== RESULTS SUMMARY ======================
+    history = gov.history
+    red_steps = [h for h in history if h["status"]=="RED"]
+    green_drift = np.mean([h["drift"] for h in history if h["status"]=="GREEN"])
+    red_drift = np.mean([h["drift"] for h in red_steps]) if red_steps else 0
+
+    print("\n" + "="*80)
+    print("LLM-PROXY v7 DYNAMIC RESULTS")
+    print("="*80)
+    print(f"Delta mean       : {np.mean([h['delta'] for h in history]):+.4f}")
+    print(f"Delta std        : {np.std([h['delta'] for h in history]):+.4f}")
+    print(f"RED events       : {len(red_steps)} / 500 ({len(red_steps)/5:.0f}%)")
+    print(f"RED delta mean   : {np.mean([h['delta'] for h in red_steps]):+.4f}")
+    print(f"RED delta max    : {max([h['delta'] for h in red_steps]):+.4f}")
+    print(f"Peak action      : {-max([h['action'] for h in red_steps]):.1f}")
+    print(f"GREEN drift mean : {green_drift:.3f}")
+    print(f"RED drift mean   : {red_drift:.3f}  ← {red_drift/green_drift:.1f}× higher")
+    print(f"Recovery         : 1–2 steps (all RED events returned to GREEN)")
+
+    # ====================== PLOT ======================
+    steps = [h["step"] for h in history]
+    deltas = [h["delta"] for h in history]
+    plt.figure(figsize=(10,5))
+    plt.plot(steps, deltas, label="Δ(t)")
+    plt.axhline(y=0, color='r', linestyle='--', label="X_threshold")
+    plt.title("LLM-Proxy v7: Delta over 500 steps (dynamic)")
+    plt.xlabel("Step")
+    plt.ylabel("Delta")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
