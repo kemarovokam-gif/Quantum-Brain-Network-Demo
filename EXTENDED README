@@ -1,0 +1,147 @@
+# Quantum Brain Network (QBN v7)
+### Absolute° Stability — Deterministic Control Layer for AI Systems
+
+**Author:** Kemar Armando Morrison  
+**Organization:** Codex Sovereign Research  
+
+---
+
+## Overview
+
+Most AI systems today are probabilistic at every level.
+
+They generate outputs based on likelihood, and downstream systems often treat those outputs as actionable decisions.
+
+This creates a structural gap:
+
+> A probabilistic system is allowed to trigger deterministic consequences.
+
+QBN v7 introduces a control layer designed to close that gap.
+
+It enforces **Absolute° Stability** — a constraint framework that evaluates, regulates, and conditions model outputs before execution.
+
+This is not a model.
+This is not a wrapper.
+
+This is a **governance layer** that sits between AI reasoning and real-world action.
+
+---
+
+## Core Concept
+
+QBN v7 separates AI systems into two domains:
+
+- **Reasoning Layer (Probabilistic)**
+- **Execution Layer (Deterministic)**
+
+The system enforces a boundary where:
+
+- Outputs are evaluated
+- Stability is measured
+- Actions are conditionally permitted
+
+If conditions are not satisfied:
+
+> The system does not execute.
+
+---
+
+## What It Does
+
+QBN v7 introduces a structured evaluation pipeline:
+
+### 1. Drift Measurement (Δ)
+Tracks deviation from stable state across generation steps.
+
+### 2. Spectral Analysis
+Applies frequency-domain decomposition (FFT) to detect:
+- instability patterns
+- oscillatory behaviour
+- hidden divergence signals
+
+### 3. Entropy & State Constraints
+Monitors:
+- uncertainty growth
+- distributional spread
+- state continuity
+
+### 4. Stability Scoring
+Combines signals into a unified risk metric.
+
+### 5. Execution Gate
+Outputs are classified into:
+
+- **ALLOW** → safe to execute  
+- **REVIEW** → conditional / requires intervention  
+- **BLOCK** → unsafe / unstable  
+
+---
+
+## Why This Matters
+
+Most AI safety approaches focus on:
+
+- alignment
+- filtering
+- post-processing
+
+QBN v7 instead targets:
+
+> **the internal stability of system behaviour under dynamic conditions**
+
+This has implications for:
+
+- autonomous systems  
+- high-reliability AI pipelines  
+- financial decision systems  
+- defense and infrastructure control  
+- real-time adaptive systems  
+
+---
+
+## Key Property
+
+QBN v7 does not rely on:
+
+- static rules  
+- hard-coded policies  
+- external moderation layers  
+
+It operates by:
+
+> **constraining the dynamics of the system itself**
+
+---
+
+## Minimal Integration Example
+
+```python
+from qbn_stability import AbsoluteStability
+
+stability = AbsoluteStability()
+
+output = model(input_data)
+
+decision = stability.evaluate(output)
+
+if decision["status"] == "ALLOW":
+    execute(output)
+elif decision["status"] == "REVIEW":
+    handle_review(output)
+else:
+    block(output)
+{
+  "delta": 0.18,
+  "entropy": 0.42,
+  "spectral_risk": 0.27,
+  "risk_score": 0.31,
+  "status": "ALLOW"
+}
+/core
+    stability.py          # Core evaluation logic
+    spectral.py           # Frequency-domain analysis
+    constraints.py        # Drift & entropy control
+/integration
+    wrapper.py            # Plug-in interface
+/demo
+    full_system_v7.py     # Full test + stress system
