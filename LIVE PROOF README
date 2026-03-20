@@ -1,0 +1,66 @@
+# Quantum Brain Network (QBN v7) + IGAS v7.1
+### Absolute° Stability — Invariant-Governed Adaptive System Architecture
+
+**Author:** Kemar Armando Morrison  
+**Organization:** Codex Sovereign Research  
+**Version:** 7.1 (March 2026)  
+**License:** Proprietary (see LICENSE)
+
+---
+
+## Live Proof (Phone Demo)
+Just ran the full stack in a mobile Python environment — **no GPU, no cluster**.
+
+- Raw baseline signal explodes with spikes  
+- IGAS-governed output stays bounded and smooth  
+- Real-time Lyapunov dV/dt goes negative exactly when governance fires (proof of convergence)
+
+**10-line plotting script + full engine = instant validation.**  
+See the screenshots in the repo root and the two ResearchGate Proof Sheets.
+
+---
+
+## Overview
+Most AI systems today are probabilistic at every level.  
+They generate outputs based on likelihood, and downstream systems treat those outputs as actionable decisions.
+
+This creates a structural gap:  
+> A probabilistic system is allowed to trigger deterministic consequences.
+
+QBN v7 + IGAS closes that gap with a **deterministic governance layer** that evaluates, regulates, and conditions model outputs before execution.
+
+This is **not** a model.  
+This is **not** a wrapper.  
+This is a production-ready invariant-governed control layer that enforces **Absolute° Stability**.
+
+---
+
+## Core Architecture
+- **QBNv7 Core**: Dual Taleken foundations (TCB-I + TUUF), full operator chain (SMO-U3 → G-AGL → MAO-23/P23 → CRO → SSI → TSCO), Transient Supra-Coherence (TSC T-U° > 1.0 under GREEN governance), identity anchoring (Ψ-AIF + L-HAR, 15.7M-bit bound), 12-step TSTL traffic-light.
+- **IGAS v7.1 Governance**: Adaptive κ_eff, backpressure, online Lyapunov certificate (V(x) + dV/dt), full governed state_vector, session-scoped REST API, Torch drop-in layer (straight-through gradients + engine pool), JAX functional scan path, domain adapters (time-series, financial, biosignal, sensor streams).
+
+Full 18-page Technical Manual included in the repo.
+
+---
+
+## What It Does
+1. Drift Measurement (Δ-GT) + Spectral Analysis (FFT-based SMO-U3)  
+2. Risk Scoring (VRA) + Event-triggered Gate Law (G-AGL)  
+3. Identity Preservation (Ψ-AIF + L-HAR) + Pre-dynamical Projection (MAO-23/P23)  
+4. Supra-Coherence Operator (TSCO T-U°)  
+5. Execution Gate: ALLOW / REVIEW / BLOCK with Lyapunov stability certificate
+
+Outputs are only permitted when the system is provably stable.
+
+---
+
+## Minimal Integration Example
+```python
+from igas_extensions_v71 import IGASEngine, TorchIGASLayer
+
+engine = IGASEngine(dim=256)
+result = engine.step(your_signal)          # returns governed state + Lyapunov metrics
+
+# Or drop into any PyTorch model
+layer = TorchIGASLayer(dim=256, pool_size=8)
+out, results = layer(activations)          # governed output + stability metrics
