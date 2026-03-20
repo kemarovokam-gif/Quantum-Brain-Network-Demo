@@ -1,0 +1,91 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# ----------------------------
+# Minimal IGAS Engine (inline)
+# ----------------------------
+class IGASEngine:
+    def __init__(self, dim=128, kappa=2.0, adaptive_alpha=0.3):
+        self.dim = dim
+        self.kappa = kappa
+        self.alpha = adaptive_alpha
+        self.state = np.zeros(dim)
+        self.prev_V = 0.0
+
+    def step(self, x):
+        # simple "governance" effect
+        mean_signal = np.mean(x)
+
+        # risk = magnitude deviation
+        risk = abs(mean_signal)
+
+        # adaptive kappa
+        kappa_eff = self.kappa * (1 + self.alpha * risk)
+
+        # update state with damping
+        self.state = (1 - 0.1 * kappa_eff) * self.state + 0.1 * x
+
+        # hard clip (stability)
+        self.state = np.clip(self.state, -2.0, 2.0)
+
+        # Lyapunov function
+        V = np.mean(self.state ** 2)
+        dVdt = V - self.prev_V
+        self.prev_V = V
+
+        return {
+            "state_vector": self.state.copy(),
+            "lyapunov_dVdt": dVdt
+        }
+
+# ----------------------------
+# 1. Create adversarial signal
+# ----------------------------
+np.random.seed(42)
+
+steps = 300
+signal = np.sin(np.linspace(0, 10, steps)) + 0.2 * np.random.randn(steps)
+
+# Inject spikes
+for i in range(50, steps, 75):
+    signal[i:i+3] += np.random.uniform(5, 8)
+
+# ----------------------------
+# 2. Baseline
+# ----------------------------
+baseline = signal.copy()
+
+# ----------------------------
+# 3. IGAS governed
+# ----------------------------
+engine = IGASEngine(dim=128, adaptive_alpha=0.3)
+
+igas_output = []
+lyap = []
+
+for x in signal:
+    vec = np.full(128, x)
+    result = engine.step(vec)
+    igas_output.append(np.mean(result["state_vector"]))
+    lyap.append(result["lyapunov_dVdt"])
+
+igas_output = np.array(igas_output)
+
+# ----------------------------
+# 4. Plot
+# ----------------------------
+plt.figure(figsize=(12,6))
+
+plt.subplot(2,1,1)
+plt.plot(baseline, label="Baseline (no governance)")
+plt.plot(igas_output, label="IGAS governed")
+plt.title("Signal Stability Comparison")
+plt.legend()
+
+plt.subplot(2,1,2)
+plt.plot(lyap)
+plt.axhline(0)
+plt.title("Lyapunov dV/dt (negative = stable)")
+
+plt.tight_layout()
+plt.show()
